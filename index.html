@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPT Image 2で作る AI漫画入門</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght=300;400;700;900&family=Dela+Gothic+One&display=swap');
+ 
+:root {
+  --ink:     #0f0f0f;
+  --paper:   #f7f4ee;
+  --red:     #d62b1f;
+  --blue:    #1240cc;
+  --gold:    #c89a00;
+  --rule:    3px solid var(--ink);
+  --shadow:  5px 5px 0 var(--ink);
+}
+ 
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+html { scroll-behavior: smooth; }
+ 
+body {
+  background: #ddd8cc;
+  font-family: 'Noto Sans JP', sans-serif;
+  color: var(--ink);
+}
+ 
+/* ── ナビ ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  background: var(--ink);
+  color: white;
+  display: flex;
+  gap: 2px;
+  padding: 0 16px;
+  z-index: 100;
+  overflow-x: auto;
+}
+nav a {
+  color: #ccc;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 10px 12px;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+nav a:hover { color: white; border-color: var(--red); }
+ 
+/* ── ページ ── */
+.page {
+  max-width: 860px;
+  margin: 56px auto 40px;
+  background: var(--paper);
+  border: var(--rule);
+  box-shadow: 8px 8px 0 #555;
+  position: relative;
+  overflow: hidden;
+}
+ 
+/* ページ番号リボン */
+.page-num {
+  position: absolute;
+  top: 20px; right: -2px;
+  background: var(--ink);
+  color: white;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 900;
+  font-size: 11px;
+  padding: 4px 14px 4px 10px;
+  letter-spacing: 0.1em;
+}
+ 
+.page-inner { padding: 48px 52px 52px; }
+ 
+/* ── 区切り線 ── */
+.rule       { border: none; border-top: var(--rule); margin: 28px 0; }
+.rule-dash  { border: none; border-top: 2px dashed #aaa8a0; margin: 22px 0; }
+.rule-thin  { border: none; border-top: 1px solid #bbb; margin: 16px 0; }
+ 
+/* ── 見出し ── */
+.section-tag {
+  display: inline-block;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 900;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  background: var(--ink);
+  color: white;
+  padding: 3px 12px;
+  margin-bottom: 10px;
+}
+.section-tag.red  { background: var(--red); }
+.section-tag.blue { background: var(--blue); }
+.section-tag.gold { background: var(--gold); }
+ 
+h1 {
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 900;
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+}
+h1 .sub {
+  display: block;
+  font-size: 0.42em;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  color: #666;
+  margin-bottom: 8px;
+}
+h2 {
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 900;
+  font-size: 1.7rem;
+  line-height: 1.3;
+  border-left: 7px solid var(--red);
+  padding-left: 14px;
+  margin-bottom: 20px;
+  letter-spacing: 0.02em;
+}
+h3 {
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  margin: 20px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+h3::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: var(--ink);
+}
+ 
+p { line-height: 1.85; margin-bottom: 12px; font-size: 0.95rem; }
+strong { font-weight: 900; }
+ 
+/* ── 表紙 ── */
+.cover-wrap {
+  padding: 80px 52px 72px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: 560px;
+}
+.cover-title { margin-bottom: 40px; }
+.cover-deco {
+  border-top: var(--rule);
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 12px;
+  color: #888;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+ 
+/* ── 目標ページ ── */
+.goal-list {
+  list-style: none;
+  margin: 20px 0;
+}
+.goal-list li {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 0;
+  border: var(--rule);
+  border-bottom: none;
+}
+.goal-list li:last-child { border-bottom: var(--rule); }
+.goal-num {
+  background: var(--ink);
+  color: white;
+  font-family: 'Dela Gothic One', sans-serif;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.goal-text {
+  padding: 14px 18px;
+  border-left: var(--rule);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.goal-text strong { display: block; font-size: 1.05rem; margin-bottom: 4px; }
+ 
+/* ── 作例ギャラリー ── */
+.gallery {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin: 20px 0;
+}
+.gallery-item {
+  border: var(--rule);
+  box-shadow: var(--shadow);
+}
+.gallery-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #e8e4da;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #999;
+  border-bottom: 2px solid var(--ink);
+  overflow: hidden;
+}
+.gallery-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gallery-cap {
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  background: white;
+}
+ 
+.gallery-wide {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 20px 0;
+}
+.gallery-wide .gallery-img { aspect-ratio: 3/4; }
+ 
+/* ── コールアウト ── */
+.callout {
+  border: var(--rule);
+  padding: 16px 20px;
+  margin: 18px 0;
+  position: relative;
+  background: white;
+  box-shadow: var(--shadow);
+}
+.callout::before {
+  content: attr(data-label);
+  position: absolute;
+  top: -13px; left: 14px;
+  background: var(--ink);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 2px 10px;
+}
+.callout.red::before  { background: var(--red); }
+.callout.blue::before { background: var(--blue); }
+.callout.gold::before { background: var(--gold); }
+ 
+/* ── 漫画ルール ── */
+.manga-rules {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 16px 0;
+}
+.rule-card {
+  border: var(--rule);
+  padding: 14px;
+  background: white;
+}
+.rule-card .rule-icon {
+  font-size: 1.8rem;
+  margin-bottom: 6px;
+  display: block;
+}
+.rule-card h4 {
+  font-weight: 900;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--ink);
+}
+.rule-card p { font-size: 12px; margin: 0; line-height: 1.7; }
+ 
+/* ── 2コマ図解 ── */
+.koma-diagram {
+  display: flex;
+  gap: 0;
+  margin: 20px 0;
+  border: var(--rule);
+  box-shadow: var(--shadow);
+}
+.koma-box {
+  flex: 1;
+  border-right: var(--rule);
+  display: flex;
+  flex-direction: column;
+}
+.koma-box:last-child { border-right: none; }
+.koma-label {
+  background: var(--ink);
+  color: white;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 900;
+  font-size: 1.2rem;
+  text-align: center;
+  padding: 8px;
+  letter-spacing: 0.1em;
+}
+.koma-label.red  { background: var(--red); }
+.koma-label.blue { background: var(--blue); }
+.koma-content {
+  flex: 1;
+  padding: 16px;
+  background: white;
+  border-top: var(--rule);
+}
+.koma-content h4 { font-weight: 900; margin-bottom: 8px; font-size: 0.95rem; }
+.koma-content p  { font-size: 12px; line-height: 1.75; margin: 0; }
+ 
+/* ── プロンプト ── */
+.prompt-block {
+  border: var(--rule);
+  margin: 16px 0;
+  box-shadow: var(--shadow);
+}
+.prompt-head {
+  background: var(--ink);
+  color: white;
+  padding: 7px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.prompt-head.red  { background: var(--red); }
+.prompt-head.blue { background: var(--blue); }
+.prompt-body {
+  padding: 14px 16px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  background: #f0ece2;
+  border-top: 2px dashed #bbb;
+}
+.prompt-note {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #555;
+  background: white;
+  border-top: 1px solid #ddd;
+}
+ 
+/* ── ステップ ── */
+.steps {
+  counter-reset: step;
+  margin: 16px 0;
+}
+.step {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  border: var(--rule);
+  border-bottom: none;
+  counter-increment: step;
+}
+.step:last-child { border-bottom: var(--rule); }
+.step-num {
+  background: var(--red);
+  color: white;
+  font-family: 'Dela Gothic One', sans-serif;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: var(--rule);
+}
+.step-body {
+  padding: 12px 16px;
+  background: white;
+}
+.step-body strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+.step-body p { font-size: 13px; margin: 0; line-height: 1.7; }
+ 
+/* ── テーブル ── */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 13px;
+}
+.tbl th {
+  background: var(--ink);
+  color: white;
+  padding: 8px 12px;
+  border: var(--rule);
+  font-size: 12px;
+}
+.tbl td {
+  padding: 9px 12px;
+  border: 2px solid var(--ink);
+  vertical-align: top;
+}
+.tbl tr:nth-child(even) td { background: #f0ece2; }
+ 
+/* ── フッター ── */
+.page-footer {
+  border-top: var(--rule);
+  padding: 10px 52px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #888;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  background: var(--paper);
+}
+ 
+ul.dot { list-style: none; padding: 0; }
+ul.dot li { padding: 5px 0 5px 20px; position: relative; font-size: 13px; border-bottom: 1px dashed #ccc; line-height: 1.6; }
+ul.dot li::before { content: '▸'; position: absolute; left: 0; color: var(--red); font-weight: bold; }
+ 
+.big-em {
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: var(--red);
+  display: inline;
+}
+ 
+.note { font-size: 12px; color: #666; }
+ 
+/* ── 画像ポップアップ（モーダル） ── */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  padding-top: 40px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(15, 15, 15, 0.9);
+  backdrop-filter: blur(8px);
+}
+.modal-content {
+  margin: auto;
+  display: block;
+  max-width: 90%;
+  max-height: 82vh;
+  object-fit: contain;
+  border: 3px solid white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: zoom 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes zoom {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  color: #fff;
+  font-size: 40px;
+  font-weight: 300;
+  cursor: pointer;
+  transition: transform 0.2s, color 0.2s;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+.modal-close:hover {
+  color: var(--red);
+  transform: rotate(90deg);
+  background: rgba(255, 255, 255, 0.2);
+}
+#modal-caption {
+  margin: auto;
+  display: block;
+  width: 80%;
+  max-width: 700px;
+  text-align: center;
+  color: #eee;
+  padding: 15px 0;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.gallery-img img, .gallery-wide img {
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s;
+}
+.gallery-img img:hover, .gallery-wide img:hover {
+  transform: scale(1.04);
+  filter: brightness(1.05);
+}
+ 
+/* ── コピーボタンのスタイル ── */
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+.copy-btn:hover {
+  background: var(--ink);
+  color: white;
+  border-color: var(--ink);
+}
+.copy-btn.copied {
+  background: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+</style>
+</head>
+<body>
+ 
+<nav>
+  <a href="#p1">表紙</a>
+  <a href="#p2">今日の目標</a>
+  <a href="#p3">GPT Image 2とは</a>
+  <a href="#p4">文字入れ＝漫画</a>
+  <a href="#p5">漫画のルール</a>
+  <a href="#p6">2コマ漫画</a>
+  <a href="#p7">キャラシート</a>
+  <a href="#p8">実際に作ろう</a>
+  <a href="#p9">作例1（考察付き）</a>
+  <a href="#p10">作例2（考察付き）</a>
+</nav>
+ 
+<!-- ========== P1: 表紙 ========== -->
+<section class="page" id="p1">
+  <div class="cover-wrap">
+    <div class="cover-title">
+      <div class="section-tag">AI 勉強会</div>
+      <h1>
+        <span class="sub">GPT Image 2 で作る</span>
+        AI漫画入門
+      </h1>
+    </div>
+    <div class="cover-deco">
+      <span>2026</span>
+      <span>AI IMAGE GENERATION × MANGA</span>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>GPT Image 2 で作る AI漫画入門</span>
+    <span>1 / 10</span>
+  </div>
+</section>
+ 
+<!-- ========== P2: 今日の目標 ========== -->
+<section class="page" id="p2">
+  <div class="page-num">PAGE 02</div>
+  <div class="page-inner">
+    <div class="section-tag">TODAY'S GOAL</div>
+    <h2>今日の目標</h2>
+ 
+    <ol class="goal-list">
+      <li>
+        <div class="goal-num">1</div>
+        <div class="goal-text">
+          <strong>GPT Image 2 が何者かを知る</strong>
+          画像生成AIの最前線。何ができて、何が難しいのかをつかむ。
+        </div>
+      </li>
+      <li>
+        <div class="goal-num">2</div>
+        <div class="goal-text">
+          <strong>漫画の「最小構成」を理解する</strong>
+          4コマじゃなくていい。2コマでも漫画は成立する。
+        </div>
+      </li>
+      <li>
+        <div class="goal-num">3</div>
+        <div class="goal-text">
+          <strong>自分のキャラクターを作る</strong>
+          一貫したキャラクターを維持するための「キャラシート」を作成する。
+        </div>
+      </li>
+      <li>
+        <div class="goal-num">4</div>
+        <div class="goal-text">
+          <strong>2コマ漫画を1枚で生成する</strong>
+          実際に手を動かして、完成品を持って帰る。
+        </div>
+      </li>
+    </ol>
+ 
+    <div class="rule"></div>
+ 
+    <div class="callout" data-label="今日のスタンス">
+      「制限の中でどれだけ作れるか」を全員でチャレンジする。<br>
+      制限に当たることも、<strong>学びのうち</strong>。失敗例も全部見せます。
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>GPT Image 2 で作る AI漫画入門</span>
+    <span>2 / 10</span>
+  </div>
+</section>
+ 
+<!-- ========== P3: GPT Image 2 って何がすごいの？ ========== -->
+<section class="page" id="p3">
+  <div class="page-num">PAGE 03</div>
+  <div class="page-inner">
+    <div class="section-tag red">ABOUT</div>
+    <h2>GPT Image 2 って、何がすごいの？</h2>
+ 
+    <p>2026年4月にOpenAIが正式リリースした最新の画像生成AI。<br>従来モデルとはアーキテクチャから別物。「推論してから描く」という発想が違う。</p>
+ 
+    <div class="rule-dash"></div>
+    <h3>作例いろいろ</h3>
+ 
+    <div class="gallery">
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/リアルの画像.jpg" alt="リアルなイラスト">
+        </div>
+        <div class="gallery-cap">リアルなイラスト</div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/インフォデミックス.jpg" alt="インフォグラフィック">
+        </div>
+        <div class="gallery-cap">インフォグラフィック</div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/ロゴデザイン.jpg" alt="ロゴ・デザイン">
+        </div>
+        <div class="gallery-cap">ロゴ・デザイン</div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/写真風.jpg" alt="写真風">
+        </div>
+        <div class="gallery-cap">写真風</div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/アニメ漫画風.jpg" alt="アニメ・漫画風">
+        </div>
+        <div class="gallery-cap">アニメ・漫画風</div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/テキスト入り画像.jpg" alt="テキスト入り画像">
+        </div>
+        <div class="gallery-cap">テキスト入り画像</div>
+      </div>
+    </div>
+ 
+    <div class="callout red" data-label="POINT">
+      テキスト・写真・イラスト・デザイン・漫画まで、<strong>なんでも1つのモデルで作れる</strong>のが最大の特徴。
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>GPT Image 2 で作る AI漫画入門</span>
+    <span>3 / 10</span>
+  </div>
+</section>
+ 
+<!-- ========== P4: 文字入れ＝漫画 ========== -->
+<section class="page" id="p4">
+  <div class="page-num">PAGE 04</div>
+  <div class="page-inner">
+    <div class="section-tag blue">KEY FEATURE</div>
+    <h2>特にすごいのが「文字入れ」</h2>
+ 
+    <p>画像生成AI of 長年の弱点は「<strong>文字が崩れる</strong>」ことだった。<br>日本語はとくにひどかった。吹き出しの中が文字化け、誤字、意味不明な記号だらけ。</p>
+ 
+    <div class="rule-dash"></div>
+ 
+    <div class="gallery-wide">
+      <div class="gallery-item">
+        <div class="gallery-img" style="aspect-ratio:1/1; background:#e0dbd0;">
+          <img src="img/特にすごい文字入れ従来モデル.jpg" alt="従来モデル：文字が崩れる">
+        </div>
+        <div class="gallery-cap" style="background:#ffe0e0;">❌ 従来モデル：文字が崩れる</div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img" style="aspect-ratio:1/1; background:#e0dbd0;">
+          <img src="img/特にすごい文字入れ新モデル.jpg" alt="GPT Image 2：日本語もきれい">
+        </div>
+        <div class="gallery-cap" style="background:#e0ffe0;">✅ GPT Image 2：日本語もきれい</div>
+      </div>
+    </div>
+ 
+    <div class="rule"></div>
+ 
+    <p style="font-size:1.15rem; font-weight:900; text-align:center; padding: 10px 0;">
+      絵が描ける　＋　文字（セリフ）が入れられる
+    </p>
+    <p style="font-size:1.05rem; text-align:center; padding-bottom: 8px;">
+      ＝　<span class="big-em">「漫画」ができる</span>
+    </p>
+ 
+    <div class="rule-dash"></div>
+ 
+    <div class="gallery-wide" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="gallery-item">
+        <div class="gallery-img" style="aspect-ratio:3/4;">
+          <img src="img/漫画記法吹き出し.png" alt="日本語吹き出し">
+        </div>
+        <div class="gallery-cap">日本語吹き出し</div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img" style="aspect-ratio:3/4;">
+          <img src="img/漫画記法効果音.png" alt="効果線・擬音">
+        </div>
+        <div class="gallery-cap">効果線・擬音</div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img" style="aspect-ratio:3/4;">
+          <img src="img/文字入れと画像でこれがマンガだ.png" alt="4コマ漫画1枚生成">
+        </div>
+        <div class="gallery-cap">4コマ漫画1枚生成</div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>GPT Image 2 で作る AI漫画入門</span>
+    <span>4 / 10</span>
+  </div>
+</section>
+ 
+<!-- ========== P5: 漫画のルール ========== -->
+<section class="page" id="p5">
+  <div class="page-num">PAGE 05</div>
+  <div class="page-inner">
+    <div class="section-tag gold">MANGA BASICS</div>
+    <h2>日本の漫画のルール</h2>
+ 
+    <p>漫画には長年かけて作られた「読者が無意識に理解できる約束事」がある。<br>AIに生成させるときも、このルールを意識するとクオリティが上がる。</p>
+ 
+    <div class="rule-dash"></div>
+ 
+    <div class="manga-rules">
+      <div class="rule-card">
+        <span class="rule-icon">↗️</span>
+        <h4>読む方向</h4>
+        <p>日本の漫画は<strong>右から左・上から下</strong>に読む。コマも右上から始まり左下へ進む。プロンプトでは「右開き・縦読み」と指定する。</p>
+      </div>
+      <div class="rule-card">
+        <span class="rule-icon">💬</span>
+        <h4>吹き出し</h4>
+        <p>セリフは<strong>縦書き・丸い吹き出し</strong>が基本。心の声は雲型（モヤモヤ吹き出し）。怒り・叫びは角ばった吹き出し。</p>
+      </div>
+      <div class="rule-card">
+        <span class="rule-icon">⚡</span>
+        <h4>効果線・効果音</h4>
+        <p>スピード感→集中線・流線。衝撃→放射線。驚き→ビリビリ線。効果音（擬音）は「ドン！」「バン！」など画面内に描き込む。</p>
+      </div>
+      <div class="rule-card">
+        <span class="rule-icon">🎭</span>
+        <h4>コマ割り</h4>
+        <p>コマのサイズ＝重要度。見せたい場面は大きく、日常は小さく。「見開き」は最大の見せ場。コマとコマの間（ガター）で時間経過を表す。</p>
+      </div>
+      <div class="rule-card">
+        <span class="rule-icon">😤</span>
+        <h4>表情・デフォルメ</h4>
+        <p>漫画の顔は<strong>オーバーな表情</strong>が基本。驚きは白目、怒りは青筋、照れはほっぺ赤。リアルな表情より誇張した表情の方が伝わる。</p>
+      </div>
+      <div class="rule-card">
+        <span class="rule-icon">⬛</span>
+        <h4>スクリーントーン</h4>
+        <p>白黒漫画の「グレー」はドット状のトーンで表現。髪のツヤ、影、背景の質感など。AIへは「screentone」と指定すると再現できる。</p>
+      </div>
+    </div>
+ 
+    <div class="callout gold" data-label="AIへの指定のコツ">
+      これらのルールを<strong>プロンプトに英語で明記</strong>することでAIが再現しやすくなる。<br>
+      例：<code>right-to-left reading order, vertical speech bubbles, screentone, speed lines</code>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>GPT Image 2 で作る AI漫画入門</span>
+    <span>5 / 10</span>
+  </div>
+</section>
+ 
+<!-- ========== P6: 2コマ漫画 ========== -->
+<section class="page" id="p6">
+  <div class="page-num">PAGE 06</div>
+  <div class="page-inner">
+    <div class="section-tag red">CORE</div>
+    <h2>今回作るのは「2コマ漫画」</h2>
+ 
+    <p>4コマ漫画は有名だが、そもそも漫画に必要なコマ数はいくつか？</p>
+ 
+    <div class="callout blue" data-label="漫画の最小構成">
+      漫画は<span class="big-em">2コマ</span>あれば成立する。
+    </div>
+ 
+    <div class="rule-dash"></div>
+ 
+    <div class="koma-diagram">
+      <div class="koma-box">
+        <div class="koma-label red">起</div>
+        <div class="koma-content">
+          <h4>コマ1：状況設定</h4>
+          <p>「誰が・どこで・何をしているか」を示す。読者に状況を理解させる。</p>
+          <div class="rule-dash"></div>
+          <p class="note">例：「今日もAIで漫画を作ろうとしているハルカ」</p>
+        </div>
+      </div>
+      <div class="koma-box">
+        <div class="koma-label blue">転</div>
+        <div class="koma-content">
+          <h4>コマ2：オチ・どんでん返し</h4>
+          <p>コマ1の状況から<strong>予想外の方向に転ぶ</strong>。これが笑いや感動の核心。</p>
+          <div class="rule-dash"></div>
+          <p class="note">例：「生成されたキャラが自分そっくりで固まる」</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>GPT Image 2 で作る AI漫画入門</span>
+    <span>6 / 10</span>
+  </div>
+</section>
+ 
+<!-- ========== P7: キャラクターシート ========== -->
+<section class="page" id="p7">
+  <div class="page-num">PAGE 07</div>
+  <div class="page-inner">
+    <div class="section-tag">CHARACTER</div>
+    <h2>キャラクターシートを作ろう</h2>
+ 
+    <p>なぜキャラクターシートが必要か？</p>
+ 
+    <div class="callout red" data-label="AIの弱点">
+      AIは毎回リセットされる。同じキャラを描いているつもりでも、<strong>プロンプトが少しでも変わると顔が変わる。</strong><br>
+      → 「この顔が正解」という<strong>参照画像＝キャラシート</strong>を最初に作っておく。
+    </div>
+ 
+    <div class="rule-dash"></div>
+    <h3>キャラクターシートのプロンプト</h3>
+ 
+    <div class="prompt-block" style="position: relative;">
+      <div class="prompt-head red">【キャラクターシート生成】そのままコピペOK</div>
+      <button class="copy-btn">コピー</button>
+      <div class="prompt-body">manga character sheet, white background,
+three views side by side: front / side / back,
+ 
+キャラクター設定：
+・名前：[名前]
+・性別：[男 / 女]
+・年齢：[年代]
+・髪型・髪色：[例：黒髪ショートボブ、前髪ぱっつん]
+・目の特徴：[例：大きな丸い瞳、タレ目]
+・服装：[例：白いセーラー服、左胸に星型バッジ]
+ 
+character DNA: [詳細な身体的特徴や衣服の英語記述]</div>
+      <div class="prompt-note">💡 特徴（髪型、服装、小物など）を詳細に指定するほど、キャラの一貫性が保ちやすくなります。</div>
+    </div>
+ 
+    <div class="rule-dash"></div>
+    <h3>キャラクターシートの例</h3>
+ 
+    <div class="gallery-wide">
+      <div class="gallery-item">
+        <div class="gallery-img" style="aspect-ratio: 4/3;">
+          <img src="img/キャラクターシート_良い例.jpg" alt="キャラクターシート_良い例">
+        </div>
+        <div class="gallery-cap">✅ 良い例：複数アングルと詳細な設定</div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img" style="aspect-ratio: 4/3;">
+          <img src="img/キャラクターシート_悪い例.jpg" alt="キャラクターシート_悪い例">
+        </div>
+        <div class="gallery-cap">❌ 悪い例：背景が複雑でアングルが不揃い</div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>GPT Image 2 で作る AI漫画入門</span>
+    <span>7 / 10</span>
+  </div>
+</section>
+ 
+<!-- ========== P8: 実際に作ろう ========== -->
+<section class="page" id="p8">
+  <div class="page-num">PAGE 08</div>
+  <div class="page-inner">
+    <div class="section-tag red">PRACTICE</div>
+    <h2>実際に作ってみよう</h2>
+    <p>キャラクターシートが用意できたら、いよいよ2コマ漫画の生成です！<br>以下のテンプレートプロンプトをカスタマイズして、オリジナルの漫画を作成してみましょう。</p>
+ 
+    <div class="rule-dash"></div>
+    <h3>2コマ漫画生成テンプレート</h3>
+ 
+    <div class="prompt-block" style="position: relative;">
+      <div class="prompt-head red">【2コマ漫画生成】そのままコピペOK</div>
+      <button class="copy-btn">コピー</button>
+      <div class="prompt-body">縦長の漫画ページ、2コマ構成、1枚の画像に2コマ全て収める、
+白黒線画、日本語吹き出しあり、スクリーントーン使用、
+右開き・縦読み形式、プロの漫画のような仕上がり、
+ 
+【キャラクター】
+（ここにキャラクターDNAを貼り付ける）
+ 
+【コマ1：起】
+場面：（状況の説明）
+セリフ：「（セリフ）」
+ 
+【コマ2：転・オチ】
+場面：（予想外の展開）
+セリフ：「（オチのセリフ）」
+ 
+manga style, 2 vertical panels,
+clear panel borders, readable Japanese text in speech bubbles,
+consistent character appearance in both panels,
+expressive exaggerated faces</div>
+      <div class="prompt-note">💡 オチ（コマ2）は自分で考えたものを入れると、ぐっとおもしろくなる。</div>
+    </div>
+ 
+    <div class="rule-dash"></div>
+ 
+    <div class="callout gold" data-label="制限に達したら">
+      <ul class="dot">
+        <li>編集モードで微調整する（新規生成カウントなし）</li>
+        <li>Grok Imagine（X Premium）で続ける</li>
+        <li>Gemini（Google）で代替生成する</li>
+      </ul>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>GPT Image 2 で作る AI漫画入門</span>
+    <span>8 / 10</span>
+  </div>
+</section>
+ 
+<!-- ========== P9: 作例紹介① ========== -->
+<section class="page" id="p9">
+  <div class="page-num">PAGE 09</div>
+  <div class="page-inner">
+    <div class="section-tag red">EXAMPLE 1</div>
+    <h2>作例①：「遅刻遅刻！」（学生服編）</h2>
+    <p>躍動感の演出と、オチのギャップを意識した2コマ漫画の作例です。画像をクリックすると拡大表示されます。</p>
+ 
+    <div class="rule-dash"></div>
+ 
+    <div class="gallery-wide" style="grid-template-columns: 1fr 1.2fr; gap: 20px;">
+      <div class="gallery-item">
+        <div class="gallery-img" style="aspect-ratio: 3/4;">
+          <img src="img/漫画作例1_遅刻遅刻.png" alt="作例1：遅刻遅刻！">
+        </div>
+        <div class="gallery-cap">作例1：遅刻遅刻！</div>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px; max-height: 520px; overflow-y: auto; padding-right: 8px;">
+        <div class="prompt-block" style="position: relative; margin: 0;">
+          <div class="prompt-head red">【作例1 プロンプト全文】</div>
+          <button class="copy-btn">コピー</button>
+          <div class="prompt-body" style="font-size: 10.5px; line-height: 1.5; white-space: pre-wrap;">縦長の画像を作成する。 2コマ構成、1枚の画像に2コマ全て収める、 フルカラーの漫画、日本語吹き出しあり、 右開き・縦読み形式、プロの漫画のような仕上がり、 漫画的な表現をゴリゴリに使って作成すること。 【キャラクター】 添付画像のキャラクターの学生服姿 【コマ1：起】 場面：キャラクターが学生服姿で、ヘルメットかぶって、「妙に人通りの静かな街中を自転車で爆走」 大げさすぎるほどの躍動感あるポージングと書き込み文字。時速100km出ているかのような演出。 セリフ：「遅刻遅刻遅刻ぅ」 【コマ2：転・オチ】 場面：学校の校門前に何とか到着するも、門は閉じられている。（「わかりやすく代休日」のプラカードや看板のようなもので演出）大げさに、膝を落として、がっかりした様子。セリフ：「あっ、今日、代休日だったぁ」
+ 
+manga style, 2 vertical panels, clear panel borders, readable Japanese text in speech bubbles, consistent character appearance, expressive exaggerated faces, dynamic pose, speed lines, full color</div>
+        </div>
+        
+        <div class="callout gold" data-label="考察と工夫点" style="margin: 0; box-shadow: none; background: white; padding: 10px 12px;">
+          <ul class="dot" style="font-size: 10.5px; line-height: 1.5; margin: 0;">
+            <li style="font-size: 10.5px; padding: 2px 0 2px 12px; border-bottom: 1px dashed #eee;"><strong>感情のコントラスト:</strong> 1コマ目の「全力疾走・焦り」から2コマ目の「完全な無駄骨・脱力」へ、ポーズと表情のギャップを大げさに誇張（exaggerated expression）させることでオチを際立たせています。</li>
+            <li style="font-size: 10.5px; padding: 2px 0 2px 12px; border-bottom: 1px dashed #eee;"><strong>背景による状況説明:</strong> セリフで説明するだけでなく、校門が閉まっていることや「代休日」の掲示物をAIに描かせることで、直感的に状況が伝わるよう工夫しています。</li>
+            <li style="font-size: 10.5px; padding: 2px 0 2px 12px; border-bottom: none;"><strong>躍動感の演出:</strong> プロンプトに <code>dynamic pose</code> や <code>speed lines</code> を指定し、時速100km出ているかのような勢いを表現しています。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>GPT Image 2 で作る AI漫画入門</span>
+    <span>9 / 10</span>
+  </div>
+</section>
+ 
+<!-- ========== P10: 作例紹介② ========== -->
+<section class="page" id="p10">
+  <div class="page-num">PAGE 10</div>
+  <div class="page-inner">
+    <div class="section-tag blue">EXAMPLE 2</div>
+    <h2>作例②：「無料券やったぜ！」（私服編）</h2>
+    <p>日常の「あるある」をテーマに、顔芸とテキスト描写の精度を活用した作例です。画像をクリックすると拡大表示されます。</p>
+ 
+    <div class="rule-dash"></div>
+ 
+    <div class="gallery-wide" style="grid-template-columns: 1fr 1.2fr; gap: 20px;">
+      <div class="gallery-item">
+        <div class="gallery-img" style="aspect-ratio: 3/4;">
+          <img src="img/漫画作例2_無料券.png" alt="作例2：エナドリ無料券">
+        </div>
+        <div class="gallery-cap">作例2：エナドリ無料券</div>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px; max-height: 520px; overflow-y: auto; padding-right: 8px;">
+        <div class="prompt-block" style="position: relative; margin: 0;">
+          <div class="prompt-head blue">【作例2 プロンプト全文】</div>
+          <button class="copy-btn">コピー</button>
+          <div class="prompt-body" style="font-size: 10.5px; line-height: 1.5; white-space: pre-wrap;">縦長の画像を作成する。 2コマ構成、1枚の画像に2コマ全て収める、 フルカラーの漫画、日本語吹き出しあり、 右開き・縦読み形式、プロの漫画のような仕上がり、 漫画的な表現をゴリゴリに使って作成すること。 【キャラクター】 添付画像のキャラクターの私服姿（ボーダーニットとスカートのスタイル） 【コマ1：起】 場面：財布を整理していると、「エナドリ無料券」（物はお任せ）のチケット出てくる。（一部分は隠れたまま） 「ぱあぁああ」っと明るい表情になる、キャラクター。セリフ：「無料券やったぜ！」 【コマ2：転・オチ】 場面： チケットが全部画面内にうつる。チケット期限が、2026年4月30日と書かれてる。 セリフ：「一カ月以上前に期限きれてるじゃん」と、先ほどまでの表情と全く逆。 大げさに、膝を落として、がっかりした様子。
+ 
+manga style, 2 vertical panels, clear panel borders, readable Japanese text in speech bubbles, consistent character appearance, expressive exaggerated faces, high contrast expressions, full color</div>
+        </div>
+        
+        <div class="callout gold" data-label="考察と工夫点" style="margin: 0; box-shadow: none; background: white; padding: 10px 12px;">
+          <ul class="dot" style="font-size: 10.5px; line-height: 1.5; margin: 0;">
+            <li style="font-size: 10.5px; padding: 2px 0 2px 12px; border-bottom: 1px dashed #eee;"><strong>表情変化（顔芸）の活用:</strong> 1コマ目の「ぱあぁああ」と輝く笑顔から、2コマ目の「チーン」とした絶望顔への極端な落差。感情をAIに大げさに表現させる指示が効いています。</li>
+            <li style="font-size: 10.5px; padding: 2px 0 2px 12px; border-bottom: 1px dashed #eee;"><strong>文字入れ精度の検証:</strong> チケット上の日付「2026年4月30日」を正確に文字生成させています。GPT Image 2の強力な文字入れ能力ならではのオチの作り方です。</li>
+            <li style="font-size: 10.5px; padding: 2px 0 2px 12px; border-bottom: none;"><strong>オチの説得力:</strong> 無料券が手に入って喜ぶ日常から、期限切れというオチへの展開は、AIに丸投げするのではなく人間がオチのアイデアをしっかりと指定することで面白さが生まれます。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>GPT Image 2 で作る AI漫画入門</span>
+    <span>10 / 10　END</span>
+  </div>
+</section>
+ 
+<!-- 画像ポップアップモーダル -->
+<div id="image-modal" class="modal">
+  <span class="modal-close">&times;</span>
+  <img class="modal-content" id="modal-img">
+  <div id="modal-caption"></div>
+</div>
+ 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const modal = document.getElementById("image-modal");
+  const modalImg = document.getElementById("modal-img");
+  const captionText = document.getElementById("modal-caption");
+  const closeBtn = document.querySelector(".modal-close");
+ 
+  // 対象となる画像にクリックイベントを追加
+  const images = document.querySelectorAll(".gallery-img img, .gallery-wide img");
+  images.forEach(img => {
+    img.addEventListener("click", function() {
+      modal.style.display = "flex";
+      modal.style.flexDirection = "column";
+      modal.style.justifyContent = "center";
+      modal.style.alignItems = "center";
+      modalImg.src = this.src;
+      
+      // キャプションの取得（親のgallery-item内にあるgallery-cap）
+      const item = this.closest(".gallery-item");
+      const cap = item ? item.querySelector(".gallery-cap") : null;
+      captionText.innerHTML = cap ? cap.textContent : this.alt;
+    });
+  });
+ 
+  // モーダルを閉じる処理
+  function closeModal() {
+    modal.style.display = "none";
+  }
+ 
+  closeBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", function(e) {
+    // 画像そのもの以外の背景部分がクリックされた場合に閉じる
+    if (e.target === modal || e.target === closeBtn) {
+      closeModal();
+    }
+  });
+ 
+  // Escキーで閉じる
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && modal.style.display !== "none") {
+      closeModal();
+    }
+  });
+ 
+  // クリップボードコピー処理
+  const copyBtns = document.querySelectorAll(".copy-btn");
+  copyBtns.forEach(btn => {
+    btn.addEventListener("click", function() {
+      const parentBlock = this.closest(".prompt-block") || this.parentElement;
+      const body = parentBlock ? parentBlock.querySelector(".prompt-body") : null;
+      if (body) {
+        // コピー用のテキストを取得
+        const text = body.innerText || body.textContent;
+        navigator.clipboard.writeText(text.trim()).then(() => {
+          const originalText = this.textContent;
+          this.textContent = "コピー完了！";
+          this.classList.add("copied");
+          setTimeout(() => {
+            this.textContent = originalText;
+            this.classList.remove("copied");
+          }, 2000);
+        }).catch(err => {
+          console.error("コピー失敗:", err);
+          alert("コピーに失敗しました。お手数ですが手動でコピーしてください。");
+        });
+      }
+    });
+  });
+});
+</script>
+ 
+</body>
+</html>
