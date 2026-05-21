@@ -534,6 +534,26 @@ ul.dot li::before { content: '▸'; position: absolute; left: 0; color: var(--re
   color: white;
   border-color: #28a745;
 }
+
+/* ── ダウンロードボタンのスタイル ── */
+.download-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+.download-btn:hover {
+  background: var(--ink);
+  color: white;
+  border-color: var(--ink);
+}
 </style>
 </head>
 <body>
@@ -913,17 +933,18 @@ character DNA: [詳細な身体的特徴や衣服の英語記述]</div>
     <p>キャラクターシートが用意できたら、いよいよ2コマ漫画の生成です！<br>以下のテンプレートプロンプトをカスタマイズして、オリジナルの漫画を作成してみましょう。</p>
  
     <div class="rule-dash"></div>
-    <h3>2コマ漫画生成テンプレート</h3>
+    <h3>2コマ漫画生成テンプレート（選べる2つのアプローチ）</h3>
  
+    <!-- パターン1：白黒・キャラ特徴はテキスト指定（基本編） -->
     <div class="prompt-block" style="position: relative;">
-      <div class="prompt-head red">【2コマ漫画生成】そのままコピペOK</div>
+      <div class="prompt-head red">パターン①：【白黒】キャラクター特徴をテキストで指定する（DNA方式）</div>
       <button class="copy-btn">コピー</button>
       <div class="prompt-body">縦長の漫画ページ、2コマ構成、1枚の画像に2コマ全て収める、
 白黒線画、日本語吹き出しあり、スクリーントーン使用、
 右開き・縦読み形式、プロの漫画のような仕上がり、
  
 【キャラクター】
-（ここにキャラクターDNAを貼り付ける）
+（ここにキャラクターDNAや詳細な特徴テキストを貼り付ける）
  
 【コマ1：起】
 場面：（状況の説明）
@@ -936,8 +957,95 @@ character DNA: [詳細な身体的特徴や衣服の英語記述]</div>
 manga style, 2 vertical panels,
 clear panel borders, readable Japanese text in speech bubbles,
 consistent character appearance in both panels,
-expressive exaggerated faces</div>
-      <div class="prompt-note">💡 オチ（コマ2）は自分で考えたものを入れると、ぐっとおもしろくなる。</div>
+expressive exaggerated faces, screentone, monochrome</div>
+      <div class="prompt-note">💡 設定テキストをキャラクター情報（DNA）としてプロンプト内に貼り付ける白黒漫画スタイルです。</div>
+    </div>
+
+    <!-- パターン2：フルカラー・キャラ画像参照（実践編） -->
+    <div class="prompt-block" style="position: relative; margin-top: 20px;">
+      <div class="prompt-head blue">パターン②：【フルカラー】キャラクターの「参照画像」を添付して作る（作例風）</div>
+      <button class="copy-btn">コピー</button>
+      <div class="prompt-body">縦長の画像を作成する。 2コマ構成、1枚の画像に2コマ全て収める、
+フルカラーの漫画、日本語吹き出しあり、
+右開き・縦読み形式、プロの漫画のような仕上がり、
+ 
+【キャラクター】
+添付画像のキャラクター（※服装や髪型など指定があれば追加する）
+ 
+【コマ1：起】
+場面：（状況の説明）
+セリフ：「（セリフ）」
+ 
+【コマ2：転・オチ】
+場面：（予想外の展開）
+セリフ：「（オチのセリフ）」
+ 
+manga style, 2 vertical panels,
+clear panel borders, readable Japanese text in speech bubbles,
+consistent character appearance in both panels,
+expressive exaggerated faces, full color</div>
+      <div class="prompt-note">💡 作成したキャラクターシートなどの画像を「参照画像」として添付して生成する、作例に近いフルカラースタイルです。</div>
+    </div>
+ 
+    <div class="rule-dash"></div>
+    <h3>【配布】自由に使えるキャラクターシートの作例（全6種）</h3>
+    <p>自分でキャラクターを作るのが難しい場合は、以下のキャラクターシートをダウンロードして画像参照用（パターン②）としてお使いいただけます。画像をクリックすると拡大表示されます。</p>
+ 
+    <div class="gallery">
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/キャラシート01.jpeg" alt="キャラシート01">
+        </div>
+        <div class="gallery-cap" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px;">
+          <span>キャラシート 01</span>
+          <a href="img/キャラシート01.jpeg" download class="download-btn">保存</a>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/キャラシート02.jpeg" alt="キャラシート02">
+        </div>
+        <div class="gallery-cap" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px;">
+          <span>キャラシート 02</span>
+          <a href="img/キャラシート02.jpeg" download class="download-btn">保存</a>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/キャラシート03.jpeg" alt="キャラシート03">
+        </div>
+        <div class="gallery-cap" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px;">
+          <span>キャラシート 03</span>
+          <a href="img/キャラシート03.jpeg" download class="download-btn">保存</a>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/キャラシート04.jpeg" alt="キャラシート04">
+        </div>
+        <div class="gallery-cap" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px;">
+          <span>キャラシート 04</span>
+          <a href="img/キャラシート04.jpeg" download class="download-btn">保存</a>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/キャラシート05.jpeg" alt="キャラシート05">
+        </div>
+        <div class="gallery-cap" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px;">
+          <span>キャラシート 05</span>
+          <a href="img/キャラシート05.jpeg" download class="download-btn">保存</a>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <div class="gallery-img">
+          <img src="img/キャラシート06.jpeg" alt="キャラシート06">
+        </div>
+        <div class="gallery-cap" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px;">
+          <span>キャラシート 06</span>
+          <a href="img/キャラシート06.jpeg" download class="download-btn">保存</a>
+        </div>
+      </div>
     </div>
  
     <div class="rule-dash"></div>
